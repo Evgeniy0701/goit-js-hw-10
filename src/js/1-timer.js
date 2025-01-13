@@ -1,95 +1,55 @@
-import flatpickr from 'flatpickr';
-import iziToast from 'izitoast';
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
+import { Notify } from "izitoast";
 
-const timerInput = document.querySelector('#datetime-picker');
-const button = document.querySelector('[data-start]');
+// Ініціалізація flatpickr
+const inputElement = document.querySelector("#datetime-picker");
+const startButton = document.querySelector("#start-button");
+const timerDisplay = document.querySelector("#timer-display");
 
-const days = document.querySelector('[data-days]');
-const hours = document.querySelector('[data-hours]');
-const minutes = document.querySelector('[data-minutes]');
-const seconds = document.querySelector('[data-seconds]');
+let selectedTime = null;
+let intervalId = null;
 
-button.disabled = true;
 
-let userSelectedDate = null;
-let timerId = null;
-
-const options = {
+flatpickr(inputElement, {
   enableTime: true,
-  time_24hr: true,
-  defaultDate: new Date(),
-  minuteIncrement: 1,
+  dateFormat: "Y-m-d H:i",
   onClose(selectedDates) {
-    const selectedDate = selectedDates[0];
-
-    if (selectedDate <= new Date()) {
-      iziToast.error({
-        message: 'Please choose a date in the future',
-        position: 'topRight',
-      });
-      button.disabled = true;
+    selectedTime = selectedDates[0].getTime();
+    if (selectedTime <= Date.now()) {
+      Notify.error("Будь ласка, оберіть дату у майбутньому");
+      startButton.disabled = true;
     } else {
-      userSelectedDate = selectedDate;
-      button.disabled = false;
+      startButton.disabled = false;
     }
   },
-};
-iziToast.success({
-  title: 'Success',
-  message: 'Valid date selected!',
 });
-flatpickr('#datetime-picker', options);
-const todayDate = new Date();
-const timeDifference = userSelectedDate - Date.now();
-button.addEventListener('click', () => {
-  button.disabled = true;
-  timerInput.disabled = true;
 
-  start();
-  timerId = setInterval(() => {
-    function updateTimerDisplay({ days, hours, minutes, seconds }) {
-      days.textContent = addLeadingZero(days);
-      hours.textContent = addLeadingZero(hours);
-      minutes.textContent = addLeadingZero(minutes);
-      seconds.textContent = addLeadingZero(seconds);
-    }
-    1000;
-    const timeLeft = convertMs(timeDifference);
-    updateTimerDisplay(timeLeft);
-  });
 
-  stop();
-  if (timeDifference < 1000) {
-    clearInterval(timerId);
-    updateTimerDisplay({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-    datetimePicker.disabled = false;
-    button.disabled = true;
+function updateTimerDisplay() {
+  const currentTime = Date.now();
+  const timeDiff = selectedTime - currentTime;
+
+  if (timeDiff <= 0) {
+    clearInterval(intervalId);
+    Notify.success("Таймер завершився!");
+    timerDisplay.textContent = "00:00:00";
     return;
   }
+
+  const hours = String(Math.floor((timeDiff / (1000 * 60 * 60)) % 24)).padStart(2, "0");
+  const minutes = String(Math.floor((timeDiff / (1000 * 60)) % 60)).padStart(2, "0");
+  const seconds = String(Math.floor((timeDiff / 1000) % 60)).padStart(2, "0");
+
+  timerDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+}
+
+
+startButton.addEventListener("click", () => {
+  if (intervalId) {
+    clearInterval(intervalId); 
+  }
+
+  updateTimerDisplay(); 
+  intervalId = setInterval(updateTimerDisplay, 1000); 
 });
-
-function addLeadingZero(value) {
-  return String(value).padStart(2, '0');
-}
-function convertMs(ms) {
-  // Number of milliseconds per unit of time
-  const second = 1000;
-  const minute = second * 60;
-  const hour = minute * 60;
-  const day = hour * 24;
-
-  // Remaining days
-  const days = Math.floor(ms / day);
-  // Remaining hours
-  const hours = Math.floor((ms % day) / hour);
-  // Remaining minutes
-  const minutes = Math.floor(((ms % day) % hour) / minute);
-  // Remaining seconds
-  const seconds = Math.floor((((ms % day) % hour) % minute) / second);
-
-  return { days, hours, minutes, seconds };
-}
-
-console.log(convertMs(2000)); // {days: 0, hours: 0, minutes: 0, seconds: 2}
-console.log(convertMs(140000)); // {days: 0, hours: 0, minutes: 2, seconds: 20}
-console.log(convertMs(24140000)); // {days: 0, hours: 6 minutes: 42, seconds: 20}
