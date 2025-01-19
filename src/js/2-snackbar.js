@@ -1,59 +1,71 @@
-// Напиши скрипт, який після сабміту форми створює проміс.
-//  В середині колбека цього промісу через вказану користувачем кількість мілісекунд
-//  проміс має виконуватися(при fulfilled) або відхилятися(при rejected),
-//     залежно від обраної опції в радіокнопках.Значенням промісу,
-//     яке передається як аргумент у методи resolve / reject,
-//         має бути значення затримки в мілісекундах.
+import iziToast from "izitoast";
+import "izitoast/dist/css/iziToast.min.css";
+import closeModalIcon from "/img/close-modal-btn.svg";
+import okModalIcon from "/img/ok-modal-btn.svg";
 
-// Створений проміс треба опрацювати у відповідних для вдалого/невдалого виконання методах.
+const formEl = document.querySelector('.form');
 
-// Якщо проміс виконується вдало, виводь у консоль наступний рядок,
-//     де delay — це значення затримки виклику промісу в мілісекундах.
+// const delay = document.querySelector('input[name="delay"]').value;
+// const state = document.querySelector('input[name="state"]:checked').value;
 
-// `✅ Fulfilled promise in ${delay}ms`
+// console.log('Delay:', delay);
+// console.log('State:', state);
 
-// Якщо проміс буде відхилено, то виводь у консоль наступний рядок,
-// де delay — це значення затримки промісу в мілісекундах.
+formEl.addEventListener('submit', event => {
+    event.preventDefault();
 
-// `❌ Rejected promise in ${delay}ms`
+    const formDate = new FormData(formEl);
 
-import iziToast from 'izitoast';
+    const delay = Number(formDate.get('delay'));
+    const state = formDate.get('state');
 
-const form = document.querySelector('.form');
-const delayInput = document.querySelector('.delay-input');
-const radioBtn = document.querySelectorAll('.fieldset-label');
-const button = document.querySelector('.form-btn');
+      console.log('Delay:', delay);
+      console.log('State:', state);
 
-form.addEventListener('submit', event => {
-  event.preventDefault();
-  const delay = Number(delayInput.value);
-  const selectedBtn = document.querySelector('input[name="state"]:checked');
-  const delayedPromise = delay => {
-    return new Promise((resolve, reject) => {
-      if (selectedBtn.value === 'fulfilled') {
+    console.log(formDate);
+    
+    formEl.reset();
+
+    const promise = new Promise((resolve, reject) => {
         setTimeout(() => {
-          resolve(delay);
+            if (state === 'fulfilled') {
+                resolve(delay);
+            } else {
+                reject(delay);
+            }
         }, delay);
-      } else {
-        reject(delay);
-      }
-    }, delay);
-  };
-  delayedPromise(delay)
-    .then(delay => {
-      iziToast.success({
-        title: 'Success',
-        message: `✅ Fulfilled promise in ${delay}ms`,
-        position: 'topRight',
-      });
-      form.reset();
-    })
-    .catch(delay => {
-      iziToast.error({
-        title: 'Error',
-        message: `❌ Rejected promise in ${delay}ms`,
-        position: 'topRight',
-      });
-      form.reset();
-    });
 });
+
+    promise.then(delay => {
+        iziToast.success({
+            title: "Ok",
+            message: `Fulfilled promise in ${delay}ms`,
+            timeout: 5000,
+            position: "topRight",
+            titleColor: "#ffffff",
+            messageColor: "#ffffff",
+            backgroundColor: "#59a10d",
+            close: false,
+            closeIcon: false,
+            closeOnEscape: true,
+            closeOnClick: true,
+            iconUrl: okModalIcon,
+        });
+    }).catch(delay => {
+        iziToast.error({
+            title: "Error",
+            message: `Rejected promise in ${delay}ms`,
+            timeout: 5000,
+            position: "topRight",
+            titleColor: "#ffffff",
+            messageColor: "#ffffff",
+            backgroundColor: "#ef4040",
+            close: false,
+            closeIcon: false,
+            closeOnEscape: true,
+            closeOnClick: true,
+            iconUrl: closeModalIcon,
+        });
+    });
+})
+
